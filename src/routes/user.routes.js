@@ -11,6 +11,8 @@
  const currntuser = userController.currentUser
  const UpdateUserDetails = userController.updatAccountDetails
  const changeavatar = userController.avatarChange 
+ const  channelSubnSubsCount   = userController.getchannelDetails
+ const watchHistory = userController.getWatchhistory
  const router = Router();
 
   router.route("/register").post(
@@ -32,9 +34,10 @@ router.route("/login").post(Login)
 router.route("/logout").post(VerifyJwt , logout)   // aap kitne bhi middleware lga lo lekin next use kro kyuki router ko pata ho ki aage bhi jana hai 
 router.route("/refreshToken").post(refreshToken)   // aap kitne bhi middleware lga lo lekin next use kro kyuki router ko pata ho ki aage bhi jana hai 
 router.route("/changePassword").post(VerifyJwt , passchange)   // aap kitne bhi middleware lga lo lekin next use kro kyuki router ko pata ho ki aage bhi jana hai 
-router.route("/currentUser").post(VerifyJwt , currntuser)   // aap kitne bhi middleware lga lo lekin next use kro kyuki router ko pata ho ki aage bhi jana hai 
-router.route("/details").post(VerifyJwt , UpdateUserDetails)   // aap kitne bhi middleware lga lo lekin next use kro kyuki router ko pata ho ki aage bhi jana hai 
-router.route("/changeavatar").post(VerifyJwt , upload.fields([{   name :"avatar",   maxCount : 1  }]), changeavatar )
-
+router.route("/currentUser").get(VerifyJwt , currntuser)   // aap kitne bhi middleware lga lo lekin next use kro kyuki router ko pata ho ki aage bhi jana hai 
+router.route("/details").patch(VerifyJwt , UpdateUserDetails)   // aap kitne bhi middleware lga lo lekin next use kro kyuki router ko pata ho ki aage bhi jana hai 
+router.route("/changeavatar").patch(VerifyJwt , upload.fields([{   name :"avatar",   maxCount : 1  }]), changeavatar )
+router.route("/subcount/:username" ).get(VerifyJwt  , channelSubnSubsCount)
+router.route("/watchHistory" ).get(VerifyJwt , watchHistory)
 
  export default router;

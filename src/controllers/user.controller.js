@@ -4,7 +4,6 @@ import APIresponse from './../utils/apiresponse.js'
 import {User} from './../models/user.model.js'
 import uploadOnCloudinary from './../utils/cloudinary.js'
 import jwt from 'jsonwebtoken'
-import React from 'react';
 
 const generateAccessTokenANDrefreshToken = async(userId) => {
     try {
@@ -278,7 +277,130 @@ const avatarChange = wrapper(async(req, res)=>{
   )
 
 })
-export default {registerUser,loginUser ,logoutUser,refreshAccessToken , changePassword , currentUser ,updatAccountDetails , avatarChange};
+
+const getchannelDetails = wrapper(async(req,res)=>{
+  const {username} = req.params
+
+  if(!username){
+    throw new apierror(400 , "USer doent exits or login");
+  }
+
+  const channel = await User.aggregate([
+    {
+      $match : {
+        username : username
+      }
+    },
+    {
+      $lookup : {
+        from : "subschemas",
+        localField : "_id",
+        foreignField :"channel",
+        as : "subscriber"
+      }
+    },
+    {
+      $lookup : {
+        from : "subschemas",
+        localField : "_id",
+        foreignField : "subscribed",
+        as :"subscribedto"
+      }
+    },
+    {
+      $addFields : {
+        subscribercount  : {
+          $size :"$subscriber"  } ,
+        subscribedToCount : {
+          $size : "$subscribedto" },
+        isSubscriber : {
+          $cond : {
+            if : { $in : [req.user?._id , "$y.subscribed"]},  // in arr and obj dono mei dekh leta hai 
+            then : true ,
+            else : false
+          }
+        }    
+      }
+    },
+    {
+      $project : {
+    fullname : 1 ,
+    username : 1 ,
+    subscribercount : 1,
+   subscribedToCount : 1 ,
+   email : 1,
+   isSubscriber : 1 
+      }
+    }
+        ])
+
+  console.log(channel);
+
+  if(!channel?.length){
+    throw new apierror(404, "Does not contain channel");
+  } 
+
+   return res
+   .status(200)
+   .json(
+    new APIresponse(200 , channel[0] , "USer channel fetched suucessfully" )
+   )
+})
+
+const getWatchhistory = wrapper(async(req,res)=>{ 
+  // moonogoe id is in string 
+    const user = await User.aggregate([
+      {
+        $match : {
+          _id : new mongoose.Types.ObjectId(req.user._id) // so basically we want to create mongoose ki id 
+        }
+      },
+      {
+        $lookup : {
+          from : "vedieos",
+          localField : "watchHistory",
+          foreignField : "_id",
+          as : "WatchHistory",
+          pipeline :[
+            {
+              $lookup : {
+                from : "users",
+                localField : "owner",
+                foreignField :"_id",
+                as :"OwnerOfVedieo",
+                pipeline : [
+                  {
+                    $project : {
+                           fullname : 1 ,
+                           username : 1 ,
+                           avatar : 1
+                    }
+                  }
+                ]
+              }
+            } ,
+            {
+              $addFields : {
+                owner : {
+                  $first  : "$owner"
+                }
+              }
+            }
+          ]
+        } 
+      }
+    ])
+
+    return res
+    .status(200)
+    .json (
+      new APIresponse(202 , user[0].watchHistory , "Watch History fetched successfully")
+    )
+})
+
+export default {registerUser,loginUser ,logoutUser,refreshAccessToken , 
+  changePassword , currentUser ,updatAccountDetails , avatarChange , getchannelDetails
+ , getWatchhistory};
 
 
 
